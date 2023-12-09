@@ -379,6 +379,20 @@ local function telescope_live_grep_open_files()
     prompt_title = 'Live Grep in Open Files',
   }
 end
+
+local search_project_files = function()
+  local workspace_folders = vim.lsp.buf.list_workspace_folders()
+  if not workspace_folders or #workspace_folders == 0 then
+    print("No workspace folder found.")
+    return
+  end
+  local workspace = workspace_folders[1]
+  return require("telescope.builtin").find_files({
+    cwd = workspace
+  })
+end
+
+vim.keymap.set('n', '<leader>sp', search_project_files, { desc = '[S]earch [P]roject Files' })
 vim.keymap.set('n', '<leader>s/', telescope_live_grep_open_files, { desc = '[S]earch [/] in Open Files' })
 vim.keymap.set('n', '<leader>ss', require('telescope.builtin').builtin, { desc = '[S]earch [S]elect Telescope' })
 vim.keymap.set('n', '<leader>gf', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' })
@@ -399,7 +413,7 @@ vim.defer_fn(function()
     ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash' },
 
     -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
-    auto_install = false,
+    auto_install = true,
 
     highlight = { enable = true },
     indent = { enable = true },
@@ -535,14 +549,19 @@ require('mason-lspconfig').setup()
 --
 --  If you want to override the default filetypes that your language server will attach to you can
 --  define the property 'filetypes' to the map in question.
+
+
 local servers = {
-  clangd = {},
+  clangd = {
+
+  },
   gopls = {},
   pyright = {},
   rust_analyzer = {},
   tsserver = {},
+  cmake = {},
   html = { filetypes = { 'html', 'twig', 'hbs' } },
-
+  marksman = {},
   lua_ls = {
     Lua = {
       workspace = { checkThirdParty = false },
@@ -574,6 +593,10 @@ mason_lspconfig.setup_handlers {
       on_attach = on_attach,
       settings = servers[server_name],
       filetypes = (servers[server_name] or {}).filetypes,
+      root_dir = require("lspconfig.util").root_pattern(
+        '*.myproj',
+        '.git'
+      ),
     }
   end,
 }
@@ -591,6 +614,10 @@ cmp.setup {
       luasnip.lsp_expand(args.body)
     end,
   },
+  window = {
+    completion = cmp.config.window.bordered(),
+    documentation = cmp.config.window.bordered(),
+  },
   completion = {
     completeopt = 'menu,menuone,noinsert',
   },
@@ -604,24 +631,6 @@ cmp.setup {
       behavior = cmp.ConfirmBehavior.Replace,
       select = true,
     },
-    ['<Tab>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_next_item()
-      elseif luasnip.expand_or_locally_jumpable() then
-        luasnip.expand_or_jump()
-      else
-        fallback()
-      end
-    end, { 'i', 's' }),
-    ['<S-Tab>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_prev_item()
-      elseif luasnip.locally_jumpable(-1) then
-        luasnip.jump(-1)
-      else
-        fallback()
-      end
-    end, { 'i', 's' }),
   },
   sources = {
     { name = 'nvim_lsp' },
