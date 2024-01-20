@@ -27,6 +27,84 @@ require('lazy').setup({
   -- Git related plugins
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
+  --"stevearc/oil.nvim",
+
+  {
+    "nvim-neo-tree/neo-tree.nvim",
+    branch = "v3.x",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
+      "MunifTanjim/nui.nvim",
+      "3rd/image.nvim",              -- Optional image support in preview window: See `# Preview Mode` for more information
+    }
+  },
+  {
+    "3rd/image.nvim",
+    -- default config
+    config = function()
+      require("image").setup({
+        backend = "kitty",
+        integrations = {
+          markdown = {
+            enabled = true,
+            clear_in_insert_mode = false,
+            download_remote_images = true,
+            only_render_image_at_cursor = false,
+            filetypes = { "markdown", "vimwiki" }, -- markdown extensions (ie. quarto) can go here
+          },
+          neorg = {
+            enabled = true,
+            clear_in_insert_mode = false,
+            download_remote_images = true,
+            only_render_image_at_cursor = false,
+            filetypes = { "norg" },
+          },
+        },
+        max_width = nil,
+        max_height = nil,
+        max_width_window_percentage = nil,
+        max_height_window_percentage = 50,
+        window_overlap_clear_enabled = false,                                     -- toggles images when windows are overlapped
+        window_overlap_clear_ft_ignore = { "cmp_menu", "cmp_docs", "" },
+        editor_only_render_when_focused = false,                                  -- auto show/hide images when the editor gains/looses focus
+        tmux_show_only_in_active_window = false,                                  -- auto show/hide images in the correct Tmux window (needs visual-activity off)
+        hijack_file_patterns = { "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp" }, -- render image files as images when opened
+      })
+    end
+  },
+  "ThePrimeagen/harpoon",
+
+  {
+    "rebelot/kanagawa.nvim",
+    -- Default options:
+    config = function()
+      require('kanagawa').setup({
+        compile = false,  -- enable compiling the colorscheme
+        undercurl = true, -- enable undercurls
+        commentStyle = { italic = true },
+        functionStyle = {},
+        keywordStyle = { italic = true },
+        statementStyle = { bold = true },
+        typeStyle = {},
+        transparent = false,   -- do not set background color
+        dimInactive = false,   -- dim inactive window `:h hl-NormalNC`
+        terminalColors = true, -- define vim.g.terminal_color_{0,17}
+        colors = {             -- add/modify theme and palette colors
+          palette = {},
+          theme = { wave = {}, lotus = {}, dragon = {}, all = {} },
+        },
+        overrides = function(colors) -- add/modify highlights
+          return {}
+        end,
+        theme = "wave",  -- Load "wave" theme when 'background' option is not set
+        background = {   -- map the value of 'background' option to a theme
+          dark = "wave", -- try "dragon" !
+          light = "lotus"
+        },
+      })
+    end,
+  },
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
@@ -50,6 +128,41 @@ require('lazy').setup({
   },
 
   {
+    "nvim-neorg/neorg",
+    run = ":Neorg sync-parsers", -- This is the important bit!
+    config = function()
+      require("neorg").setup {
+        load = {
+          ["core.defaults"] = {
+          },
+          ["core.autocommands"] = {},
+          ["core.integrations.treesitter"] = {
+            config = {
+              configure_parsers = true,
+              install_parsers = true,
+
+            },
+          },
+          ["core.concealer"] = { -- Adds pretty icons to your document
+            config = {
+              folds = false,
+            },
+          },
+          ["core.summary"] = {},
+          ["core.dirman"] = { -- Manages Neorg workspaces
+            config = {
+              workspaces = {
+                notes = "~/Documents/notes",
+              },
+              index = "~/Documents/notes/index.norg",
+            }
+          }
+        },
+      }
+    end,
+  },
+
+  {
     -- Autocompletion
     'hrsh7th/nvim-cmp',
     dependencies = {
@@ -59,6 +172,11 @@ require('lazy').setup({
 
       -- Adds LSP completion capabilities
       'hrsh7th/cmp-nvim-lsp',
+
+      -- Add other completion
+      'hrsh7th/cmp-buffer',
+      'hrsh7th/cmp-path',
+      'hrsh7th/cmp-cmdline',
 
       -- Adds a number of user-friendly snippets
       'rafamadriz/friendly-snippets',
@@ -143,21 +261,12 @@ require('lazy').setup({
   },
 
   {
-    -- Theme inspired by Atom
-    'navarasu/onedark.nvim',
-    priority = 10000,
-    config = function()
-      vim.cmd.colorscheme 'onedark'
-    end,
-  },
-
-  {
     -- Set lualine as statusline
     'nvim-lualine/lualine.nvim',
     -- See `:help lualine.txt`
     opts = {
       options = {
-        icons_enabled = false,
+        icons_enabled = true,
         theme = 'auto',
         component_separators = '|',
         section_separators = '',
@@ -232,7 +341,9 @@ require('lazy').setup({
   --    Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --
   --    For additional information see: https://github.com/folke/lazy.nvim#-structuring-your-plugins
-  { import = 'custom.plugins' },
+  {
+    -- import = 'custom.plugins'
+  },
 }, {})
 
 -- [[ Setting options ]]
@@ -242,6 +353,32 @@ require('lazy').setup({
 -- TODO: Seperate out these options from this file
 vim.o.hlsearch = false
 
+vim.o.background = ""
+vim.api.nvim_command('colorscheme kanagawa')
+
+-- setup must be called before loading
+
+vim.api.nvim_command('set number')
+--vim.api.nvim_command('set nofoldenable')
+vim.api.nvim_command('set relativenumber')
+vim.api.nvim_command('set hlsearch')
+vim.api.nvim_command('set ignorecase')
+
+vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
+
+-- Remap for dealing with word wrap
+vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
+vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
+
+-- Diagnostic keymaps
+vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous diagnostic message' })
+vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnostic message' })
+vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Open floating diagnostic message' })
+vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostics list' })
+
+-- Navigate between quickfix items
+vim.keymap.set("n", "<ESC>j", "<cmd>cnext<CR>zz", { desc = "Forward qfixlist" })
+vim.keymap.set("n", "<ESC>k", "<cmd>cprev<CR>zz", { desc = "Forward qfixlist" })
 vim.o.ignorecase = true
 
 vim.o.termguicolors = true
@@ -260,6 +397,7 @@ vim.o.clipboard = "unnamedplus"
 
 -- When new window opens put it below the available window
 vim.opt.splitbelow = true
+vim.opt.conceallevel = 2
 vim.opt.splitright = true
 
 vim.o.inccommand = "split"
@@ -386,6 +524,12 @@ local search_project_files = function()
     print("No workspace folder found.")
     return
   end
+  if vim.fn.getcwd() == "~/Documents/notes" then
+    return require("telescope.builtin").findfile({
+      cwd = "~/Documents/notes"
+    })
+  end
+
   local workspace = workspace_folders[1]
   return require("telescope.builtin").find_files({
     cwd = workspace
@@ -540,6 +684,144 @@ require('which-key').register({
 -- before setting up the servers.
 require('mason').setup()
 require('mason-lspconfig').setup()
+--require("oil").setup({
+--  -- Oil will take over directory buffers (e.g. `vim .` or `:e src/`)
+--  -- Set to false if you still want to use netrw.
+--  default_file_explorer = true,
+--  -- Id is automatically added at the beginning, and name at the end
+--  -- See :help oil-columns
+--  columns = {
+--    "icon",
+--    -- "permissions",
+--    -- "size",
+--    -- "mtime",
+--  },
+--  -- Buffer-local options to use for oil buffers
+--  buf_options = {
+--    buflisted = false,
+--    bufhidden = "hide",
+--  },
+--  -- Window-local options to use for oil buffers
+--  win_options = {
+--    wrap = false,
+--    signcolumn = "no",
+--    cursorcolumn = false,
+--    foldcolumn = "3",
+--    spell = false,
+--    list = false,
+--    conceallevel = 0,
+--    concealcursor = "nvic",
+--  },
+--  -- Send deleted files to the trash instead of permanently deleting them (:help oil-trash)
+--  delete_to_trash = false,
+--  -- Skip the confirmation popup for simple operations
+--  skip_confirm_for_simple_edits = false,
+--  -- Selecting a new/moved/renamed file or directory will prompt you to save changes first
+--  prompt_save_on_select_new_entry = true,
+--  -- Oil will automatically delete hidden buffers after this delay
+--  -- You can set the delay to false to disable cleanup entirely
+--  -- Note that the cleanup process only starts when none of the oil buffers are currently displayed
+--  cleanup_delay_ms = 2000,
+--  -- Keymaps in oil buffer. Can be any value that `vim.keymap.set` accepts OR a table of keymap
+--  -- options with a `callback` (e.g. { callback = function() ... end, desc = "", mode = "n" })
+--  -- Additionally, if it is a string that matches "actions.<name>",
+--  -- it will use the mapping at require("oil.actions").<name>
+--  -- Set to `false` to remove a keymap
+--  -- See :help oil-actions for a list of all available actions
+--  keymaps = {
+--    ["g?"] = "actions.show_help",
+--    ["<CR>"] = "actions.select",
+--    ["<C-s>"] = "actions.select_vsplit",
+--    ["<C-h>"] = "actions.select_split",
+--    ["<C-t>"] = "actions.select_tab",
+--    ["<C-p>"] = "actions.preview",
+--    ["<C-c>"] = "actions.close",
+--    ["<C-l>"] = "actions.refresh",
+--    ["-"] = "actions.parent",
+--    ["_"] = "actions.open_cwd",
+--    ["`"] = "actions.cd",
+--    ["~"] = "actions.tcd",
+--    ["gs"] = "actions.change_sort",
+--    ["gx"] = "actions.open_external",
+--    ["g."] = "actions.toggle_hidden",
+--    ["g\\"] = "actions.toggle_trash",
+--  },
+--  -- Set to false to disable all of the above keymaps
+--  use_default_keymaps = true,
+--  view_options = {
+--    -- Show files and directories that start with "."
+--    show_hidden = false,
+--    -- This function defines what is considered a "hidden" file
+--    is_hidden_file = function(name, bufnr)
+--      return vim.startswith(name, ".")
+--    end,
+--    -- This function defines what will never be shown, even when `show_hidden` is set
+--    is_always_hidden = function(name, bufnr)
+--      return false
+--    end,
+--    sort = {
+--      -- sort order can be "asc" or "desc"
+--      -- see :help oil-columns to see which columns are sortable
+--      { "type", "asc" },
+--      { "name", "asc" },
+--    },
+--  },
+--  -- Configuration for the floating window in oil.open_float
+--  float = {
+--    -- Padding around the floating window
+--    padding = 2,
+--    max_width = 0,
+--    max_height = 0,
+--    border = "rounded",
+--    win_options = {
+--      winblend = 0,
+--    },
+--    -- This is the config that will be passed to nvim_open_win.
+--    -- Change values here to customize the layout
+--    override = function(conf)
+--      return conf
+--    end,
+--  },
+--  -- Configuration for the actions floating preview window
+--  preview = {
+--    -- Width dimensions can be integers or a float between 0 and 1 (e.g. 0.4 for 40%)
+--    -- min_width and max_width can be a single value or a list of mixed integer/float types.
+--    -- max_width = {100, 0.8} means "the lesser of 100 columns or 80% of total"
+--    max_width = 0.9,
+--    -- min_width = {40, 0.4} means "the greater of 40 columns or 40% of total"
+--    min_width = { 40, 0.4 },
+--    -- optionally define an integer/float for the exact width of the preview window
+--    width = nil,
+--    -- Height dimensions can be integers or a float between 0 and 1 (e.g. 0.4 for 40%)
+--    -- min_height and max_height can be a single value or a list of mixed integer/float types.
+--    -- max_height = {80, 0.9} means "the lesser of 80 columns or 90% of total"
+--    max_height = 0.9,
+--    -- min_height = {5, 0.1} means "the greater of 5 columns or 10% of total"
+--    min_height = { 5, 0.1 },
+--    -- optionally define an integer/float for the exact height of the preview window
+--    height = nil,
+--    border = "rounded",
+--    win_options = {
+--      winblend = 0,
+--    },
+--    -- Whether the preview window is automatically updated when the cursor is moved
+--    update_on_cursor_moved = true,
+--  },
+--  -- Configuration for the floating progress window
+--  progress = {
+--    max_width = 0.9,
+--    min_width = { 40, 0.4 },
+--    width = nil,
+--    max_height = { 10, 0.9 },
+--    min_height = { 5, 0.1 },
+--    height = nil,
+--    border = "rounded",
+--    minimized_border = "none",
+--    win_options = {
+--      winblend = 0,
+--    },
+--  },
+--})
 
 -- Enable the following language servers
 --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
@@ -635,6 +917,9 @@ cmp.setup {
   sources = {
     { name = 'nvim_lsp' },
     { name = 'luasnip' },
+    { name = 'path' },
+    { name = 'cmdline' },
+    { name = 'neorg' },
   },
 }
 
