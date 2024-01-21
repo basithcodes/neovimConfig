@@ -27,7 +27,8 @@ require('lazy').setup({
   -- Git related plugins
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
-  --"stevearc/oil.nvim",
+  "stevearc/oil.nvim",
+  'folke/trouble.nvim',
 
   {
     "nvim-neo-tree/neo-tree.nvim",
@@ -88,7 +89,7 @@ require('lazy').setup({
         statementStyle = { bold = true },
         typeStyle = {},
         transparent = false,   -- do not set background color
-        dimInactive = false,   -- dim inactive window `:h hl-NormalNC`
+        dimInactive = true,    -- dim inactive window `:h hl-NormalNC`
         terminalColors = true, -- define vim.g.terminal_color_{0,17}
         colors = {             -- add/modify theme and palette colors
           palette = {},
